@@ -6,18 +6,17 @@ import plotly.express as px
 import plotly.graph_objects as go
 from scipy.optimize import minimize
 
-from src.utils.constants import DATA_DIR, REPORT_DIR
-from src.utils.logger import get_logger
+from ConcreteMixOptimiser.utils.constants import DATA_DIR, REPORT_DIR
+from ConcreteMixOptimiser.utils.logger import get_logger
 
 
 class RatioAllocation:
     def __init__(self):
         self.logger = get_logger()
 
-        self.data_dir = DATA_DIR / "Civil"
-        self.report_dir = REPORT_DIR / "Civil"
-        self.report_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir = DATA_DIR
         self.raw_data_dir = self.data_dir / "raw"
+        self.report_dir = REPORT_DIR
         self.class_g_cement_df = pd.read_csv(self.raw_data_dir / "class_g_cement.csv")
         self.crumb_rubber_df = pd.read_csv(self.raw_data_dir / "crumb_rubber.csv")
         self.crumb_rubber_powder_df = pd.read_csv(
