@@ -29,10 +29,15 @@ class FileProcessor:
 
 
 def main():
+    # update the webpage title
+    st.set_page_config(page_title="Mix Concrete", page_icon=":construction:")
+
+    st.info("Welcome to Concrete Mix Optimiser developed by UWA")
+
     st.title("Concrete Mix Optimiser")
 
     # Ask user to input a name
-    uid_name = st.text_input("Give your session a unique name, can be your email:")
+    uid_name = st.text_input("Enter your email address to get started:")
     if not uid_name:
         st.warning("Please provide a name.")
         return
@@ -50,40 +55,58 @@ def main():
         "quartz_powder", "quartz_sand", "silica_fume", "sand"
     ]
 
+    # check whether all the files are ready
+    all_files_ready = all((raw_csv_dir / f"{name}.csv").exists() for name in file_names)
+
     files = {}
-    for name in file_names:
-        file_path = raw_csv_dir / f"{name}.csv"
+    with st.expander("Upload Files", expanded=(not all_files_ready)):
+        # Create rows with 2 columns each
+        for i in range(0, len(file_names), 2):
+            col1, col2 = st.columns(2)
 
-        if file_path.exists():
-            st.info(f"{name}.csv already exists. You can re-upload if needed.")
+            with col1:
+                name = file_names[i]
+                file_path = raw_csv_dir / f"{name}.csv"
 
-        file = st.file_uploader(f"Upload {name}.csv", type="csv")
-        files[name] = file
+                if file_path.exists():
+                    st.info(f"{name}.csv exists")
 
-    if st.button("Process Uploaded Files"):
-        st.header("File Previews")
-        for name, file in files.items():
-            file_path = raw_csv_dir / f"{name}.csv"
-            if file is not None:
-                df = load_csv(file)
-                st.subheader(f"{name}.csv")
-                st.write(df.head())
-                # save the file to the raw_data directory
-                df.to_csv(file_path, index=False)
-                st.success(f"{name}.csv processed and saved successfully.")
-            elif file_path.exists():
-                st.info(f"{name}.csv already exists. Displaying existing file:")
-                existing_df = pd.read_csv(file_path)
-                st.write(existing_df.head())
-            else:
-                st.warning(f"{name}.csv not uploaded.")
+                file = st.file_uploader(f"Upload {name}.csv", type="csv", key=f"upload_{i}")
+                files[name] = file
 
-        # Here you would typically call your RatioAllocation process
-        # For example:
-        # ratio_allocation = RatioAllocation(raw_data_dir=raw_csv_dir)
-        # ratio_allocation.process()
+            if i + 1 < len(file_names):
+                with col2:
+                    name = file_names[i + 1]
+                    file_path = raw_csv_dir / f"{name}.csv"
 
-        st.success("Files processed successfully!")
+                    if file_path.exists():
+                        st.info(f"{name}.csv exists")
+
+                    file = st.file_uploader(f"Upload {name}.csv", type="csv", key=f"upload_{i + 1}")
+                    files[name] = file
+
+        if st.button("Process Uploaded Files"):
+            st.header("File Previews")
+            for name, file in files.items():
+                file_path = raw_csv_dir / f"{name}.csv"
+                if file is not None:
+                    df = load_csv(file)
+                    st.subheader(f"{name}.csv")
+                    st.write(df.head())
+                    # save the file to the raw_data directory
+                    df.to_csv(file_path, index=False)
+                    st.success(f"{name}.csv processed and saved successfully.")
+                elif file_path.exists():
+                    st.info(f"{name}.csv already exists")
+                else:
+                    st.warning(f"{name}.csv not uploaded.")
+
+            # Here you would typically call your RatioAllocation process
+            # For example:
+            # ratio_allocation = RatioAllocation(raw_data_dir=raw_csv_dir)
+            # ratio_allocation.process()
+
+            st.success("Files processed successfully!")
 
 
 if __name__ == "__main__":
