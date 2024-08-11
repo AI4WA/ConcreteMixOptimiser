@@ -5,17 +5,22 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from scipy.optimize import minimize
+from pathlib import Path
 
 from ConcreteMixOptimiser.utils.constants import DATA_DIR, REPORT_DIR
 from ConcreteMixOptimiser.utils.logger import get_logger
 
 
 class RatioAllocation:
-    def __init__(self):
+    def __init__(self, data_dir: Path = None, show_plotly: bool = True):
         self.logger = get_logger()
-
-        self.data_dir = DATA_DIR
-        self.raw_data_dir = self.data_dir / "raw"
+        self.show_plotly = show_plotly
+        if data_dir is not None:
+            self.data_dir = data_dir
+            self.raw_data_dir = self.data_dir
+        else:
+            self.data_dir = DATA_DIR
+            self.raw_data_dir = self.data_dir / "raw"
         self.report_dir = REPORT_DIR
         self.class_g_cement_df = pd.read_csv(self.raw_data_dir / "class_g_cement.csv")
         self.crumb_rubber_df = pd.read_csv(self.raw_data_dir / "crumb_rubber.csv")
@@ -409,7 +414,8 @@ class RatioAllocation:
 
         fig.update_layout(title="Target blue cumulative sum", xaxis_type="log")
 
-        fig.show()
+        if self.show_plotly:
+            fig.show()
 
         # Save the figure
         if filename is not None:
@@ -434,7 +440,8 @@ class RatioAllocation:
         # set x axis to log
         fig.update_xaxes(type="log")
 
-        fig.show()
+        if self.show_plotly:
+            fig.show()
         # write to report dir
         fig.write_image(str(report_dir / f"{name}.png"))
 
