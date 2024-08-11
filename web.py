@@ -40,44 +40,47 @@ def main():
     if not is_valid_email(uid_name):
         st.warning("Please provide a valid email.")
         return
+
     raw_csv_dir = DATA_DIR / uid_name
     raw_csv_dir.mkdir(exist_ok=True, parents=True)
 
     # File uploader
-    class_g_cement_file = st.file_uploader("Upload class_g_cement.csv", type="csv")
-    crumb_rubber_file = st.file_uploader("Upload crumb_rubber.csv", type="csv")
-    crumb_rubber_powder_file = st.file_uploader("Upload crumb_rubber_powder.csv", type="csv")
-    quartz_powder_file = st.file_uploader("Upload quartz_powder.csv", type="csv")
-    quartz_sand_file = st.file_uploader("Upload quartz_sand.csv", type="csv")
-    silica_fume_file = st.file_uploader("Upload silica_fume.csv", type="csv")
-    sand_file = st.file_uploader("Upload sand.csv", type="csv")
+    file_names = [
+        "class_g_cement", "crumb_rubber", "crumb_rubber_powder",
+        "quartz_powder", "quartz_sand", "silica_fume", "sand"
+    ]
 
-    # Load and display previews
-    files = {
-        "class_g_cement": class_g_cement_file,
-        "crumb_rubber": crumb_rubber_file,
-        "crumb_rubber_powder": crumb_rubber_powder_file,
-        "quartz_powder": quartz_powder_file,
-        "quartz_sand": quartz_sand_file,
-        "silica_fume": silica_fume_file,
-        "sand": sand_file
-    }
+    files = {}
+    for name in file_names:
+        file_path = raw_csv_dir / f"{name}.csv"
+
+        if file_path.exists():
+            st.info(f"{name}.csv already exists. You can re-upload if needed.")
+
+        file = st.file_uploader(f"Upload {name}.csv", type="csv")
+        files[name] = file
 
     if st.button("Process Uploaded Files"):
         st.header("File Previews")
         for name, file in files.items():
-            df = load_csv(file)
-            if df is not None:
+            file_path = raw_csv_dir / f"{name}.csv"
+            if file is not None:
+                df = load_csv(file)
                 st.subheader(f"{name}.csv")
                 st.write(df.head())
                 # save the file to the raw_data directory
-                df.to_csv(raw_csv_dir / f"{name}.csv", index=False)
+                df.to_csv(file_path, index=False)
+                st.success(f"{name}.csv processed and saved successfully.")
+            elif file_path.exists():
+                st.info(f"{name}.csv already exists. Displaying existing file:")
+                existing_df = pd.read_csv(file_path)
+                st.write(existing_df.head())
             else:
                 st.warning(f"{name}.csv not uploaded.")
 
         # Here you would typically call your RatioAllocation process
         # For example:
-        # ratio_allocation = RatioAllocation(raw_data_dir=".")
+        # ratio_allocation = RatioAllocation(raw_data_dir=raw_csv_dir)
         # ratio_allocation.process()
 
         st.success("Files processed successfully!")
