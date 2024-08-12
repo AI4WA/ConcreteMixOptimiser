@@ -64,6 +64,7 @@ def main():
     # Ask user to input a name
     uid_name = st.text_input("Enter your email address to get started:")
     if not uid_name:
+        st.info("For demo purpose, you can type in the following email address: cmouwa@demo.com")
         st.warning("Please provide a name.")
         return
 
