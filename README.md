@@ -20,7 +20,7 @@ And then you will be able to explore the three different modes of calculations.
 
 ### Video
 
-[![Watch the video](https://img.youtube.com/vi/kx85c3kUAyw/maxresdefault.jpg)](https://youtu.be/kx85c3kUAyw)
+[![CMO-UWA](https://img.youtube.com/vi/kx85c3kUAyw/0.jpg)](https://www.youtube.com/watch?v=kx85c3kUAyw)
 
 ## How to run it locally?
 
