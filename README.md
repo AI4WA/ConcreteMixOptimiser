@@ -18,6 +18,10 @@ For demo purpose, you can type in the following email address: `cmouwa@demo.com`
 
 And then you will be able to explore the three different modes of calculations.
 
+### Video
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/kx85c3kUAyw" frameborder="0" allowfullscreen></iframe>
+
 ## How to run it locally?
 
 1. Clone the repository.
