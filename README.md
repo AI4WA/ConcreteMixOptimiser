@@ -20,7 +20,7 @@ And then you will be able to explore the three different modes of calculations.
 
 ### Video
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/kx85c3kUAyw" frameborder="0" allowfullscreen></iframe>
+[![Watch the video](https://img.youtube.com/vi/kx85c3kUAyw/maxresdefault.jpg)](https://youtu.be/kx85c3kUAyw)
 
 ## How to run it locally?
 
