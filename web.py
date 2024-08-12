@@ -113,6 +113,27 @@ def main():
             "Upload the CSV files for each material used in the concrete mix. \n"
             "If a file has been uploaded, it will be indicated below."
         )
+        # give an example of the file format, what contains in the file
+        # size, finer
+        # 0.523, 0.08
+        # 0.594, 0.17
+        # 0.675, 0.26
+        # 0.767, 0.32
+        # 0.872, 0.34
+        st.markdown(
+            """
+        **File Format Example:**
+
+        ```
+        size, finer
+        0.523, 0.08
+        0.594, 0.17
+        0.675, 0.26
+        0.767, 0.32
+        0.872, 0.34
+        ```
+        """
+        )
 
         # Create rows with 2 columns each
         for i in range(0, len(file_names), 2):
@@ -156,6 +177,7 @@ def main():
         if st.button("Process Uploaded Files"):
             st.header("File Previews")
             for name, file in files.items():
+                logger.info(f"Processing {name}.csv")
                 file_path = raw_csv_dir / f"{name}.csv"
                 if file is not None:
                     df = load_csv(file)
@@ -269,8 +291,17 @@ def main():
                 component_names=component_names, given_ratio=given_ratio
             )
             st.write("Calculation complete.")
-
-            st.write(f"For given ratio, Mean Squared Error (MSE): {mse}")
+            given_ratio_html_text = "<ul>"
+            for name, ratio in zip(component_names, given_ratio):
+                given_ratio_html_text += (
+                    f"<li>{name.replace('_', ' ').title()}: {ratio:.4f}</li>"
+                )
+            given_ratio_html_text += "</ul>"
+            given_ratio_html_text += (
+                "<p>Mean Squared Error (MSE): {:.4f}</p>".format(mse)
+            )
+            st.write("Given Ratio:")
+            st.write(given_ratio_html_text, unsafe_allow_html=True)
             components.html(html, height=800)
 
         elif calculation_type == "Optimise based on Given Ratio Range":
