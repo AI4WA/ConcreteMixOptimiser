@@ -122,12 +122,12 @@ class RatioAllocation:
         # calculate the target blue
         size_range = df["size"].unique()
         # get the size range that is between size_min and size_max
-        size_range = [i for i in size_range if i >= size_min and i <= size_max]
+        size_range = [i for i in size_range if (size_min <= i <= size_max)]
         size_range_readable = [f"{val:.2f}" for val in size_range]
         self.logger.info(f"size range: {size_range_readable}")
         # sort size range asc
         size_range.sort()
-        x, y_pred = self.plot_target_blue(
+        x, y_pred, html = self.plot_target_blue(
             size_ranges=size_range, d_min=size_min, d_max=size_max, q=q
         )
         x_readable = [f"{val:.2f}" for val in x]
@@ -191,6 +191,7 @@ class RatioAllocation:
             optimal_results = self.find_best_ratio(
                 vectors, y=y_pred, given_bound=given_bound
             )
+            given_ratio = optimal_results[0]
             y_actual = optimal_results[-2]
             filename = "_".join([str(val) for val in optimal_results[0]])
             mse = optimal_results[-1]
@@ -198,7 +199,7 @@ class RatioAllocation:
         for i in range(len(y_actual)):
             y_actual[i] = y_actual[i] / 100
 
-        self.plot_target_blue(
+        _, _, html = self.plot_target_blue(
             size_ranges=size_range,
             d_min=size_min,
             d_max=size_max,
@@ -206,7 +207,7 @@ class RatioAllocation:
             y_actual=y_actual,
             filename=filename,
         )
-        return mse
+        return mse, html, given_ratio
 
     def calculate_y_from_given_ratio(self, vectors, y, given_ratio):
         n = len(vectors)  # Get the number of vectors
@@ -313,12 +314,15 @@ class RatioAllocation:
         return optimal_coefficients, optimal_lambda, cum_sum, mse
 
     def plot(self):
-        self.plot_cum_distribution(self.class_g_cement_df, "class_g_cement")
-        self.plot_cum_distribution(self.crumb_rubber_df, "crumb_rubber")
-        self.plot_cum_distribution(self.crumb_rubber_powder_df, "crumb_rubber_powder")
-        self.plot_cum_distribution(self.quartz_powder_df, "quartz_powder")
-        self.plot_cum_distribution(self.quartz_sand_df, "quartz_sand")
-        self.plot_cum_distribution(self.silica_fume_df, "silica_fume")
+        html = ""
+        html += self.plot_cum_distribution(self.class_g_cement_df, "class_g_cement")
+        html += self.plot_cum_distribution(self.crumb_rubber_df, "crumb_rubber")
+        html += self.plot_cum_distribution(self.crumb_rubber_powder_df, "crumb_rubber_powder")
+        html += self.plot_cum_distribution(self.quartz_powder_df, "quartz_powder")
+        html += self.plot_cum_distribution(self.quartz_sand_df, "quartz_sand")
+        html += self.plot_cum_distribution(self.silica_fume_df, "silica_fume")
+        html += self.plot_cum_distribution(self.sand_df, "sand")
+        return html
 
     def collect_all_size_params(self):
         """
@@ -384,6 +388,7 @@ class RatioAllocation:
                 + str(q)
                 + "}}}}$"
         )
+
         # also add the annotation what's
         formula_annotation = go.layout.Annotation(
             x=0.9,  # Adjust the x-coordinate to move the formula to the right
@@ -422,8 +427,8 @@ class RatioAllocation:
             fig.write_image(str(self.report_dir / f"target_blue_{filename}.png"))
         else:
             fig.write_image(str(self.report_dir / "target_blue.png"))
-
-        return size_ranges, y
+        html = fig.to_html(include_mathjax="cdn", full_html=False)
+        return size_ranges, y, html
 
     def plot_cum_distribution(self, df: pd.DataFrame, name: str):
         report_dir = self.report_dir / "blue_individually"
@@ -444,11 +449,13 @@ class RatioAllocation:
             fig.show()
         # write to report dir
         fig.write_image(str(report_dir / f"{name}.png"))
+        html = fig.to_html(include_mathjax="cdn", full_html=False)
+        return html
 
 
 if __name__ == "__main__":
     ratio_allocation = RatioAllocation()
-    mse = ratio_allocation.process(
+    mse, html, given_ratio = ratio_allocation.process(
         component_names=[
             "class_g_cement",
             "quartz_sand",
