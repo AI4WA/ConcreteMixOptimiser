@@ -1,11 +1,12 @@
-from typing import List
+import glob
+from pathlib import Path
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from scipy.optimize import minimize
-from pathlib import Path
 
 from ConcreteMixOptimiser.utils.constants import DATA_DIR, REPORT_DIR
 from ConcreteMixOptimiser.utils.logger import get_logger
@@ -22,68 +23,36 @@ class RatioAllocation:
             self.data_dir = DATA_DIR
             self.raw_data_dir = self.data_dir / "raw"
         self.report_dir = REPORT_DIR
-        self.class_g_cement_df = pd.read_csv(self.raw_data_dir / "class_g_cement.csv")
-        self.crumb_rubber_df = pd.read_csv(self.raw_data_dir / "crumb_rubber.csv")
-        self.crumb_rubber_powder_df = pd.read_csv(
-            self.raw_data_dir / "crumb_rubber_powder.csv"
-        )
-        self.quartz_powder_df = pd.read_csv(self.raw_data_dir / "quartz_powder.csv")
-        self.quartz_sand_df = pd.read_csv(self.raw_data_dir / "quartz_sand.csv")
-        self.silica_fume_df = pd.read_csv(self.raw_data_dir / "silica_fume.csv")
-        self.sand_df = pd.read_csv(self.raw_data_dir / "sand.csv")
 
-        # add category column to each df
-        self.class_g_cement_df["category"] = "class_g_cement"
-        self.crumb_rubber_df["category"] = "crumb_rubber"
-        self.crumb_rubber_powder_df["category"] = "crumb_rubber_powder"
-        self.quartz_powder_df["category"] = "quartz_powder"
-        self.quartz_sand_df["category"] = "quartz_sand"
-        self.silica_fume_df["category"] = "silica_fume"
-        self.sand_df["category"] = "sand"
+        # Dynamically load all CSV files in the raw_data_dir
+        self.materials: Dict[str, pd.DataFrame] = {}
+        for csv_file in glob.glob(str(self.raw_data_dir / "*.csv")):
+            material_name = Path(csv_file).stem
+            df = pd.read_csv(csv_file)
+            df["category"] = material_name
+            df["size"] = df["size"].astype(float)
+            df["finer"] = df["finer"].astype(float)
+            self.materials[material_name] = df
 
-        # get the type of the dfs as float
-        self.class_g_cement_df["size"] = self.class_g_cement_df["size"].astype(float)
-        self.crumb_rubber_df["size"] = self.crumb_rubber_df["size"].astype(float)
-        self.crumb_rubber_powder_df["size"] = self.crumb_rubber_powder_df[
-            "size"
-        ].astype(float)
-        self.quartz_powder_df["size"] = self.quartz_powder_df["size"].astype(float)
-        self.quartz_sand_df["size"] = self.quartz_sand_df["size"].astype(float)
-        self.silica_fume_df["size"] = self.silica_fume_df["size"].astype(float)
-        self.sand_df["size"] = self.sand_df["size"].astype(float)
-        # and the finer
-        self.class_g_cement_df["finer"] = self.class_g_cement_df["finer"].astype(float)
-        self.crumb_rubber_df["finer"] = self.crumb_rubber_df["finer"].astype(float)
-        self.crumb_rubber_powder_df["finer"] = self.crumb_rubber_powder_df[
-            "finer"
-        ].astype(float)
-        self.quartz_powder_df["finer"] = self.quartz_powder_df["finer"].astype(float)
-        self.quartz_sand_df["finer"] = self.quartz_sand_df["finer"].astype(float)
-        self.sand_df["finer"] = self.sand_df["finer"].astype(float)
+            # Log the shape of each dataframe
+            self.logger.info(f"{material_name}_df shape: {df.shape}")
 
         self.logger.info("RatioAllocation initialized")
         self.logger.info(f"Data directory: {self.data_dir}")
+        self.logger.info(f"Loaded materials: {', '.join(self.materials.keys())}")
 
-        # log the shape of the dataframes
-        self.logger.info(f"class_g_cement_df shape: {self.class_g_cement_df.shape}")
-        self.logger.info(f"crumb_rubber_df shape: {self.crumb_rubber_df.shape}")
-        self.logger.info(
-            f"crumb_rubber_powder_df shape: {self.crumb_rubber_powder_df.shape}"
-        )
-        self.logger.info(f"quartz_powder_df shape: {self.quartz_powder_df.shape}")
-        self.logger.info(f"quartz_sand_df shape: {self.quartz_sand_df.shape}")
-        self.logger.info(f"silica_fume_df shape: {self.silica_fume_df.shape}")
-        self.logger.info(f"sand_df shape: {self.sand_df.shape}")
+    def get_material_df(self, material_name: str) -> pd.DataFrame:
+        return self.materials.get(material_name)
 
     def process(
-            self, component_names: List[str] = None, given_bound=None, given_ratio=None
+        self, component_names: List[str] = None, given_bound=None, given_ratio=None
     ):
         self.logger.info("RatioAllocation process started")
         self.plot()
         return self.calculate_best_ratio(component_names, given_bound, given_ratio)
 
     def calculate_best_ratio(
-            self, component_names: List[str], given_bound=None, given_ratio=None
+        self, component_names: List[str], given_bound=None, given_ratio=None
     ):
         """
         calculate the best ratio for the given components
@@ -104,9 +73,9 @@ class RatioAllocation:
             df = pd.concat(
                 [
                     df,
-                    self.__getattribute__(f"{component_name}_df")[
-                        ["size", "finer"]
-                    ].assign(type=component_name),
+                    self.get_material_df(component_name)[["size", "finer"]].assign(
+                        type=component_name
+                    ),
                 ]
             )
         # sort the df via the size value asc
@@ -151,7 +120,7 @@ class RatioAllocation:
             # merge it with the original df, fill the missing finer with 0
             df = pd.merge(
                 df,
-                self.__getattribute__(f"{component_name}_df")[["size", "finer"]],
+                self.get_material_df(component_name)[["size", "finer"]],
                 on="size",
                 how="left",
             )
@@ -184,7 +153,9 @@ class RatioAllocation:
             # then this is a calculation for the given ratio problem, do not need to do the optimization
             # just calculate the y from the given ratio
             self.logger.info(f"Given ratio sum: {np.sum(given_ratio)}")
-            y_actual, mse = self.calculate_y_from_given_ratio(vectors, y_pred, given_ratio)
+            y_actual, mse = self.calculate_y_from_given_ratio(
+                vectors, y_pred, given_ratio
+            )
             filename = "_".join([str(val) for val in given_ratio])
 
         else:
@@ -315,32 +286,12 @@ class RatioAllocation:
 
     def plot(self):
         html = ""
-        html += self.plot_cum_distribution(self.class_g_cement_df, "class_g_cement")
-        html += self.plot_cum_distribution(self.crumb_rubber_df, "crumb_rubber")
-        html += self.plot_cum_distribution(self.crumb_rubber_powder_df, "crumb_rubber_powder")
-        html += self.plot_cum_distribution(self.quartz_powder_df, "quartz_powder")
-        html += self.plot_cum_distribution(self.quartz_sand_df, "quartz_sand")
-        html += self.plot_cum_distribution(self.silica_fume_df, "silica_fume")
-        html += self.plot_cum_distribution(self.sand_df, "sand")
+        for material_name, df in self.materials.items():
+            html += self.plot_cum_distribution(df, material_name)
         return html
 
     def collect_all_size_params(self):
-        """
-        merge all the df together and collect all the size params
-        Returns
-        -------
-
-        """
-        df = pd.concat(
-            [
-                self.class_g_cement_df,
-                self.crumb_rubber_df,
-                self.crumb_rubber_powder_df,
-                self.quartz_powder_df,
-                self.quartz_sand_df,
-                self.silica_fume_df,
-            ]
-        )
+        df = pd.concat(list(self.materials.values()))
         df = df[["size", "finer"]]
         df = df.sort_values(by="size", ascending=True)
         self.logger.info(f"df shape: {df.shape}")
@@ -349,7 +300,7 @@ class RatioAllocation:
             self.logger.info(f"size: {row['size']}, finer: {row['finer']}")
 
     def plot_target_blue(  # noqa
-            self, size_ranges, d_min=0.2, d_max=600, q=0.23, y_actual=None, filename=None
+        self, size_ranges, d_min=0.2, d_max=600, q=0.23, y_actual=None, filename=None
     ):
         """
         Target blue cum plot for the class_g_cement
@@ -360,7 +311,7 @@ class RatioAllocation:
 
         """
         # set x is 0-100, step is 0.1, plot the x,y with loglog plot
-        y = [(i ** q - d_min ** q) / (d_max ** q - d_min ** q) for i in size_ranges]
+        y = [(i**q - d_min**q) / (d_max**q - d_min**q) for i in size_ranges]
         # stop it when y > 1, so only plot the range of x that y < 1
         y = [i for i in y if i <= 1]
         # cat the size range to the y
@@ -374,19 +325,19 @@ class RatioAllocation:
 
         # Add the LaTeX-formatted formula annotation
         formula_text = (
-                "Formula: $y = \\frac{{x^{{"
-                + str(q)
-                + f"}} - {d_min}^{{"
-                + str(q)
-                + "}}}}{{"
-                + str(d_max)
-                + "^{{"
-                + str(q)
-                + "}} - "
-                + str(d_min)
-                + "^{{"
-                + str(q)
-                + "}}}}$"
+            "Formula: $y = \\frac{{x^{{"
+            + str(q)
+            + f"}} - {d_min}^{{"
+            + str(q)
+            + "}}}}{{"
+            + str(d_max)
+            + "^{{"
+            + str(q)
+            + "}} - "
+            + str(d_min)
+            + "^{{"
+            + str(q)
+            + "}}}}$"
         )
 
         # also add the annotation what's
@@ -461,15 +412,16 @@ if __name__ == "__main__":
             "quartz_sand",
             "quartz_powder",
             "silica_fume",
-            "sand"
+            "sand",
         ],
-        given_bound=[[0.389, 1],
-                     [0, 1],
-                     [0.03, 0.089],
-                     [0.08, 0.16],
-                     [0, 1],
-                     # [0, 1]
-                     ],
+        given_bound=[
+            [0.389, 1],
+            [0, 1],
+            [0.03, 0.089],
+            [0.08, 0.16],
+            [0, 1],
+            # [0, 1]
+        ],
         # given_ratio=[
         #     0.3828,  # class_g_cement
         #     0,  # quartz_sand

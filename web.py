@@ -1,10 +1,12 @@
-import streamlit as st
-import pandas as pd
-from ConcreteMixOptimiser.utils.constants import DATA_DIR
-from ConcreteMixOptimiser.optimiser import RatioAllocation
-from ConcreteMixOptimiser.utils.logger import get_logger
 import re
+
+import pandas as pd
+import streamlit as st
 import streamlit.components.v1 as components
+
+from ConcreteMixOptimiser.optimiser import RatioAllocation
+from ConcreteMixOptimiser.utils.constants import DATA_DIR
+from ConcreteMixOptimiser.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -37,7 +39,8 @@ def main():
     # update the webpage title
     st.set_page_config(page_title="Mix Concrete", page_icon=":construction:")
 
-    st.markdown("""
+    st.markdown(
+        """
     <style>
     .uploaded-file {
         color: green;
@@ -55,7 +58,9 @@ def main():
         box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.1);
     }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     st.info("Welcome to Concrete Mix Optimiser developed by UWA")
 
@@ -64,7 +69,9 @@ def main():
     # Ask user to input a name
     uid_name = st.text_input("Enter your email address to get started:")
     if not uid_name:
-        st.info("For demo purpose, you can type in the following email address: cmouwa@demo.com")
+        st.info(
+            "For demo purpose, you can type in the following email address: cmouwa@demo.com"
+        )
         st.warning("Please provide a name.")
         return
 
@@ -75,19 +82,38 @@ def main():
     raw_csv_dir = DATA_DIR / uid_name
     raw_csv_dir.mkdir(exist_ok=True, parents=True)
 
-    # File uploader
-    file_names = [
-        "class_g_cement", "crumb_rubber", "crumb_rubber_powder",
-        "quartz_powder", "quartz_sand", "silica_fume", "sand"
+    # Customizable file names
+    default_file_names = [
+        "class_g_cement",
+        "crumb_rubber",
+        "crumb_rubber_powder",
+        "quartz_powder",
+        "quartz_sand",
+        "silica_fume",
+        "sand",
     ]
 
+    # Allow user to customize file names
+    with st.expander("Customize Mixture Materials", expanded=False):
+        custom_file_names = st.text_area(
+            "Enter material names (one per line), name it as example shows",
+            "\n".join(default_file_names),
+            height=300,
+        )
+        file_names = [
+            name.strip() for name in custom_file_names.split("\n") if name.strip()
+        ]
+
+    # File uploader
     files = {}
     files_status = {name: (raw_csv_dir / f"{name}.csv").exists() for name in file_names}
 
     with st.expander("Upload Files", expanded=not all(files_status.values())):
-        st.markdown("### Upload the required material files:")
         st.markdown(
-            "Upload the CSV files for each material used in the concrete mix. If a file has been uploaded, it will be indicated below.")
+            "Upload the CSV files for each material used in the concrete mix. \n"
+            "If a file has been uploaded, it will be indicated below."
+        )
+
         # Create rows with 2 columns each
         for i in range(0, len(file_names), 2):
             col1, col2 = st.columns(2)
@@ -95,24 +121,36 @@ def main():
             with col1:
                 name = file_names[i]
                 file_path = raw_csv_dir / f"{name}.csv"
-                status_class = "uploaded-file" if files_status[name] else "not-uploaded-file"
+                status_class = (
+                    "uploaded-file" if files_status[name] else "not-uploaded-file"
+                )
 
-                st.markdown(f'<div class="{status_class}">{name.replace("_", " ").title()} CSV</div>',
-                            unsafe_allow_html=True)
+                st.markdown(
+                    f'<div class="{status_class}">{name.replace("_", " ").title()} CSV</div>',
+                    unsafe_allow_html=True,
+                )
 
-                file = st.file_uploader(f"Upload {name}.csv", type="csv", key=f"upload_{i}")
+                file = st.file_uploader(
+                    f"Upload {name}.csv", type="csv", key=f"upload_{i}"
+                )
                 files[name] = file
 
             if i + 1 < len(file_names):
                 with col2:
                     name = file_names[i + 1]
                     file_path = raw_csv_dir / f"{name}.csv"
-                    status_class = "uploaded-file" if files_status[name] else "not-uploaded-file"
+                    status_class = (
+                        "uploaded-file" if files_status[name] else "not-uploaded-file"
+                    )
 
-                    st.markdown(f'<div class="{status_class}">{name.replace("_", " ").title()} CSV</div>',
-                                unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div class="{status_class}">{name.replace("_", " ").title()} CSV</div>',
+                        unsafe_allow_html=True,
+                    )
 
-                    file = st.file_uploader(f"Upload {name}.csv", type="csv", key=f"upload_{i + 1}")
+                    file = st.file_uploader(
+                        f"Upload {name}.csv", type="csv", key=f"upload_{i + 1}"
+                    )
                     files[name] = file
 
         if st.button("Process Uploaded Files"):
@@ -135,7 +173,6 @@ def main():
             # Check if all files are ready after processing
             if not all(files_status.values()):
                 st.warning("Some files are still missing. Please upload them.")
-
     if not all(files_status.values()):
         return
     # Initialize the RatioAllocation
@@ -143,7 +180,7 @@ def main():
 
     with st.expander("Data Analysis", expanded=True):
         analyse_html = ratio_allocation.plot()
-        components.html(analyse_html, height=400 * 7)
+        components.html(analyse_html, height=450 * len(file_names))
     st.success("All files are ready for processing!")
     st.divider()
 
@@ -152,7 +189,11 @@ def main():
     # Selection option for calculation type
     calculation_type = st.selectbox(
         "Select Calculation Type:",
-        ("Calculate based on Given Ratio", "Optimise based on Given Ratio Range", "Search within Given Ratio Range")
+        (
+            "Calculate based on Given Ratio",
+            "Optimise based on Given Ratio Range",
+            "Search within Given Ratio Range",
+        ),
     )
 
     st.info("Select the ratio range for each material involved in the mix.")
@@ -162,9 +203,11 @@ def main():
         for name in file_names:
             col1, col2 = st.columns([1, 2])
             with col1:
-                use_material = st.checkbox(f"Use {name.replace('_', ' ').title()}", key=f"check_{name}")
+                use_material = st.checkbox(
+                    f"Use {name.replace('_', ' ').title()}", key=f"check_{name}"
+                )
             if use_material:
-                if calculation_type == 'Calculate based on Given Ratio':
+                if calculation_type == "Calculate based on Given Ratio":
                     # only one value for slider
                     with col2:
                         ratio_value = st.number_input(
@@ -174,7 +217,7 @@ def main():
                             value=0.5000,
                             step=0.0001,  # Step size, controls the precision
                             format="%.4f",  # Ensures 4 decimal places are displayed
-                            key=f"input_{name}"
+                            key=f"input_{name}",
                         )
                         selected_materials[name] = (ratio_value, ratio_value)
                 else:
@@ -185,7 +228,7 @@ def main():
                             max_value=1.0000,
                             value=(0.0000, 1.0000),
                             step=0.0001,  # Step size, controls the precision
-                            key=f"slider_{name}"
+                            key=f"slider_{name}",
                         )
                         selected_materials[name] = ratio_range
 
@@ -196,7 +239,7 @@ def main():
                 max_value=1000,
                 value=100,
                 step=1,
-                key="total_iterations"
+                key="total_iterations",
             )
 
     if st.button("Process"):
@@ -214,13 +257,16 @@ def main():
 
             # sum the value, if it is not within 1 range, then alert the user
             if not (1.02 >= sum(given_ratio) >= 0.98):
-                st.error("The sum of the given ratio must be equal to 1. Current sum: {}".format(sum(given_ratio)))
+                st.error(
+                    "The sum of the given ratio must be equal to 1. Current sum: {}".format(
+                        sum(given_ratio)
+                    )
+                )
                 return
 
             # Add your calculation logic here
             mse, html, _ = ratio_allocation.process(
-                component_names=component_names,
-                given_ratio=given_ratio
+                component_names=component_names, given_ratio=given_ratio
             )
             st.write("Calculation complete.")
 
@@ -232,15 +278,18 @@ def main():
             # Add your optimization logic here
             # Example: mse = ratio_allocation.optimize(...)
             mse, html, optimised_ratio = ratio_allocation.process(
-                component_names=component_names,
-                given_bound=given_bound
+                component_names=component_names, given_bound=given_bound
             )
             st.write("Optimization complete.")
             optimised_ratio_html_text = "<ul>"
             for name, ratio in zip(component_names, optimised_ratio):
-                optimised_ratio_html_text += f"<li>{name.replace('_', ' ').title()}: {ratio:.4f}</li>"
+                optimised_ratio_html_text += (
+                    f"<li>{name.replace('_', ' ').title()}: {ratio:.4f}</li>"
+                )
             optimised_ratio_html_text += "</ul>"
-            optimised_ratio_html_text += "<p>Mean Squared Error (MSE): {:.4f}</p>".format(mse)
+            optimised_ratio_html_text += (
+                "<p>Mean Squared Error (MSE): {:.4f}</p>".format(mse)
+            )
             st.write("Optimised Ratio:")
             st.write(optimised_ratio_html_text, unsafe_allow_html=True)
             components.html(html, height=800)
@@ -273,9 +322,13 @@ def main():
             st.write("Search complete.")
             optimised_ratio_html_text = "<ul>"
             for name, ratio in zip(component_names, best_optimised_ratio):
-                optimised_ratio_html_text += f"<li>{name.replace('_', ' ').title()}: {ratio:.4f}</li>"
+                optimised_ratio_html_text += (
+                    f"<li>{name.replace('_', ' ').title()}: {ratio:.4f}</li>"
+                )
             optimised_ratio_html_text += "</ul>"
-            optimised_ratio_html_text += "<p>Mean Squared Error (MSE): {:.4f}</p>".format(best_mse)
+            optimised_ratio_html_text += (
+                "<p>Mean Squared Error (MSE): {:.4f}</p>".format(best_mse)
+            )
             st.write("Optimised Ratio:")
             st.write(optimised_ratio_html_text, unsafe_allow_html=True)
             components.html(best_html, height=800)
