@@ -84,13 +84,13 @@ def main():
 
     # Customizable file names
     default_file_names = [
-        "class_g_cement",
-        "crumb_rubber",
-        "crumb_rubber_powder",
-        "quartz_powder",
-        "quartz_sand",
-        "silica_fume",
-        "sand",
+        "material_1",
+        "material_2",
+        "material_3",
+        "material_4",
+        "material_5",
+        "material_6",
+        "material_7",
     ]
 
     # Allow user to customize file names
