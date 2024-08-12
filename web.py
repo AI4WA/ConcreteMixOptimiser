@@ -62,9 +62,17 @@ def main():
         unsafe_allow_html=True,
     )
 
-    st.info("Welcome to Concrete Mix Optimiser developed by UWA")
+    st.info("Welcome to Concrete Mix Optimiser developed by UWA Civil Engineer Team")
+    st.markdown(
+        "Github Repository: "
+        "<a href='https://github.com/AI4WA/ConcreteMixOptimiser' target='__blank'>Concrete Mix Optimiser</a>",
+        unsafe_allow_html=True)
 
     st.title("Concrete Mix Optimiser")
+
+    with st.expander("How to use it", expanded=False):
+        # https://youtu.be/kx85c3kUAyw, add this video to the page
+        st.video("https://youtu.be/kx85c3kUAyw")
 
     # Ask user to input a name
     uid_name = st.text_input("Enter your email address to get started:")
@@ -326,20 +334,18 @@ def main():
             components.html(html, height=800)
 
         elif calculation_type == "Search within Given Ratio Range":
-            st.write("Searching within the given range...")
-            if "class_g_cement" not in component_names:
-                st.error("The Class G Cement must be included in the search.")
-                return
+            st.write("Searching based on the first material within the given range...")
             progress_bar = st.progress(0)
             best_one = None
             best_html = None
             best_optimised_ratio = None
             best_mse = 0
             for concrete in range(1, total_iterations):
-                concrete_left_b = 0.38 + 0.001 * concrete
+                concrete_left_b_start = given_bound[0][0]
+                concrete_left_b = concrete_left_b_start + 0.001 * concrete
                 if concrete_left_b > 0.999:
                     break
-                given_bound[-1][1] = concrete_left_b
+                given_bound[0][0] = concrete_left_b
                 mse, html, optimised_ratio = ratio_allocation.process(
                     component_names=component_names,
                     given_bound=given_bound,
@@ -363,6 +369,32 @@ def main():
             st.write("Optimised Ratio:")
             st.write(optimised_ratio_html_text, unsafe_allow_html=True)
             components.html(best_html, height=800)
+
+    # add a footer: developed by UWA, contact email
+    st.markdown(
+        """
+        <style>
+        .footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #f1f1f1;
+            color: black;
+            text-align: center;
+            padding: 10px;
+        }
+        </style>
+        <div class="footer">
+            <p>Developed by UWA</p>
+            <p>Contact: 
+                Software Related: <a href="mailto:pascal.sun@research.uwa.edu.au">pascal.sun@research.uwa.edu.au</a> or 
+                Research Related: <a href="mailto:xin.lyu@research.uwa.edu.au">xin.lyu@research.uwa.edu.au</a>
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":
