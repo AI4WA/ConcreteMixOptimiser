@@ -1,9 +1,21 @@
-venv
-logs
-reports
-.idea
-data
-__pycache__
+# Ignore everything
+*
+
+# But include the data folder
+!data/
+
+# Ignore everything inside the data folder
+data/*
+
+# Except for the cmouwa@demo.com folder
+!data/cmouwa@demo.com/
+
+# Specifically ignore these patterns, even inside the included folders
+venv/
+logs/
+reports/
+.idea/
+__pycache__/
 *.pyc
 *.pyo
 *.db
