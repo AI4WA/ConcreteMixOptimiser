@@ -205,7 +205,7 @@ def main():
     # Initialize the RatioAllocation
     ratio_allocation = RatioAllocation(raw_csv_dir, show_plotly=False)
 
-    with st.expander("Data Analysis", expanded=True):
+    with st.expander("Data Analysis", expanded=False):
         analyse_html = ratio_allocation.plot()
         components.html(analyse_html, height=450 * len(file_names))
     st.success("All files are ready for processing!")
