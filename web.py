@@ -97,18 +97,50 @@ def main():
         "material_3",
         "material_4",
     ]
-
     # Allow user to customize file names
     with st.expander("Customize Mixture Materials", expanded=False):
-        custom_file_names = st.text_area(
-            "Enter material names (one per line), name it as example shows. \n You can include two and more materials you want to use, doesn't necessary to be how many we put here as an example:",
-            "\n".join(default_file_names),
-            height=300,
-        )
-        file_names = [
-            name.strip() for name in custom_file_names.split("\n") if name.strip()
-        ]
+        # Initialize the session state for custom_file_names if not already done
+        if 'custom_file_names' not in st.session_state:
+            st.session_state.custom_file_names = default_file_names.copy()
 
+        # Create columns for the buttons
+        col1, col2 = st.columns([1, 1])
+
+        with col1:
+            # Button to add a new material
+            if st.button("Add Material"):
+                new_material_name = f"material_{len(st.session_state.custom_file_names) + 1}"
+                st.session_state.custom_file_names.append(new_material_name)
+
+        with col2:
+            # Button to remove the last material
+            if st.button("Remove Last Material"):
+                if len(st.session_state.custom_file_names) > 1:
+                    st.session_state.custom_file_names.pop()
+                else:
+                    st.warning("Cannot remove the last material. At least one material must remain.")
+
+        st.write("---")
+        st.write("Current Materials:")
+
+        # Display the current list of materials and allow user to update names
+        for i, material_name in enumerate(st.session_state.custom_file_names):
+            updated_name = st.text_input(
+                f"Material {i + 1}:",
+                value=material_name,
+                key=f"material_{i}"
+            )
+            if updated_name.strip():  # Ensure the new name is not empty
+                st.session_state.custom_file_names[i] = updated_name
+            else:
+                st.error(f"Material {i + 1} name cannot be empty.")
+
+        st.write("---")
+        # Save the final list of materials
+        file_names = st.session_state.custom_file_names
+
+        # Display final file names
+        st.write("Final file names:", file_names)
     # File uploader
     files = {}
     files_status = {name: (raw_csv_dir / f"{name}.csv").exists() for name in file_names}
