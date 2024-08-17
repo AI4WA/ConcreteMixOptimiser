@@ -96,15 +96,12 @@ def main():
         "material_2",
         "material_3",
         "material_4",
-        "material_5",
-        "material_6",
-        "material_7",
     ]
 
     # Allow user to customize file names
     with st.expander("Customize Mixture Materials", expanded=False):
         custom_file_names = st.text_area(
-            "Enter material names (one per line), name it as example shows",
+            "Enter material names (one per line), name it as example shows. \n You can include two and more materials you want to use, doesn't necessary to be how many we put here as an example:",
             "\n".join(default_file_names),
             height=300,
         )
